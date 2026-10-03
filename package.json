@@ -1,0 +1,39 @@
+{
+  "name": "bingebang-mac",
+  "version": "1.1.0",
+  "description": "BingeBang native Mac app — history, continue watching, smart recommendations, native HLS player",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "test:scraper": "node ./scripts/test-scraper.js",
+    "pack:mac": "electron-builder --mac"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "electron-store": "^10.0.0",
+    "hls.js": "^1.5.13"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "st.bingebang.mac",
+    "productName": "BingeBang",
+    "mac": {
+      "category": "public.app-category.entertainment",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ]
+  },
+  "allowScripts": {
+    "electron@33.4.11": true
+  }
+}
