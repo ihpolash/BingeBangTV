@@ -459,6 +459,7 @@ function renderDetail(it) {
   bindCards();
   // stash for player resume
   window._detail = it;
+  window._episodes = null; // clear stale episodes — reloads per TV title in loadEpisodes
   window._defaultEp = null; // set once this title's episodes load
 }
 
@@ -737,9 +738,16 @@ async function playTitle(item, { season, episode } = {}) {
     evaluateDub(audioPrefOrder());
   }).catch(() => {});
 
-  // episodes bar
-  const eps = r.episodes || window._episodes;
-  if (eps?.seasons) {
+  // episodes bar — TV only. Movies never show episode buttons, even if a
+  // previous TV title left stale data in window._episodes or the resolver
+  // returned an episodes block for a non-TV page.
+  const freshEps = r.episodes?.seasons?.length ? r.episodes : null;
+  if (item.type === 'tv' && freshEps) window._episodes = freshEps;
+  // Only reuse the detail-page episodes cache when it belongs to this title.
+  const fallbackEps = (window._episodes?.seasons?.length && window._detail?.url && window._detail.url === item.url)
+    ? window._episodes : null;
+  const eps = item.type === 'tv' ? (freshEps || fallbackEps) : null;
+  if (item.type === 'tv' && eps?.seasons?.length) {
     const bar = document.getElementById('player-episodes');
     const s0 = season || eps.seasons[0]?.season || 1;
     const cur = eps.seasons.find(x => x.season === s0) || eps.seasons[0];
@@ -753,10 +761,9 @@ async function playTitle(item, { season, episode } = {}) {
   saveTimer = setInterval(() => saveNow(true), 5000);
   video.onended = () => {
     DB().touch(item, { season: season || 0, episode: episode || 0, position: Math.floor(video.duration || 0), duration: Math.floor(video.duration || 0), completed: true });
-    // autoplay next episode
-    const eps2 = r.episodes || window._episodes;
-    if (item.type === 'tv' && eps2?.seasons && season && episode) {
-      const s0 = eps2.seasons.find(x => x.season === season);
+    // autoplay next episode — TV only, using the validated eps for this title
+    if (item.type === 'tv' && eps?.seasons?.length && season && episode) {
+      const s0 = eps.seasons.find(x => x.season === season);
       const next = s0?.episodes.find(e => e.episode === episode + 1);
       if (next) playTitle(item, { season, episode: episode + 1 });
     }
